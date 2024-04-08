@@ -1,0 +1,36 @@
+use_val: False
+use_group_label: False # choose whether to use the ground-truth group labels for training
+fast_train: 0 # if 0, use all the training data per epoch to calculate spuriousness scores; otherwise, randomly sample fast_train batches per epoch
+random_sampler: False # randomly sample meta-learning tasks
+pretrained: True # choose whether to use ImageNet-pretrained weights
+test: False # If True, skip the training
+batch_size : 256 # batch size
+topk: 1
+num_supp : 10 # number of training shots
+num_query : 10 # number of query samples
+num_epochs : 50 # training epochs
+num_episode : 20 # how many task batches are used in each epoch
+task_num: 4 # how many tasks are contained in each task batch
+n_classes: 10 # number of classes
+dataset: "nico" # celeba, waterbirds, imagenet-9, nico
+backbone: "resnet18" # model architecture
+score_func: "tanh-abs-log" # score function, choose from {tanh-abs-log, tanh-log, abs-log, log, abs-diff, diff}
+scheduler: "cosine"
+milestones: [80, 120, 160]
+gamma: 0.2
+vlm: "blip"
+alpha: 1.0 # strength of the meta-learning loss
+lr : 5.e-3 # learning rate
+augmentation : True # whether to use data augmentation
+temp : 10 # temperatuer used at the nearest neighbor classifier with cosine distance
+val_threshold_num : 50 # minimum number of samples used for calculating the pseudo worst validation accuracy
+tag: "exp"
+
+
+save_folder: "/path/meta_spurious_exprs/" # where to save the experimental results
+data_folder: "/path/data/NICO/multi_classification"
+vit_gpt2_attr_embed_path: "/path/data/NICO/multi_classification/vit-gpt2_img_embeddings.pickle"
+vit_gpt2_vocab_path: "/path/data/NICO/multi_classification/vit-gpt2_vocab.pickle"
+blip_attr_embed_path: "/path/data/NICO/multi_classification/blip_img_embeddings.pickle"
+blip_vocab_path: "/path/data/NICO/multi_classification/blip_vocab.pickle"
+num_workers: 4 # number of workers used in data loading

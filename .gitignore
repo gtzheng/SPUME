@@ -1,0 +1,6 @@
+*.ipynb
+__pycache__
+*.out
+*.svg
+*.sh
+.vscode
