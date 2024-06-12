@@ -1,4 +1,5 @@
-# Spuriousness-Aware Meta-Learning for Learning Robust Classifiers
+# Spuriousness-Aware Meta-Learning (SPUME)
+This repository provides the official implementation of the algorithm SPUME proposed in the paper "Spuriousness-Aware Meta-Learning for Learning Robust Classifiers  (KDD'24)".
 ## Preparation
 ### Download datasets:
 Download all the datasets and decompress them into individual folders.
@@ -44,3 +45,15 @@ python train_meta_spurious.py --config config/waterbirds.yaml
 ```
 
 The final results are shown in the last line starting with "[PseudoUnbiasedModel]".
+
+## Citation
+
+Please consider citing this paper if you find the code helpful.
+```
+@inproceedings{zheng2024spuriousness,
+ title={Spuriousness-Aware Meta-Learning for Learning Robust Classifiers},
+ author={Zheng, Guangtao and Ye, Wenqian and Zhang, Aidong},
+ booktitle={The 30th ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD’24)},
+ year={2024}
+}
+```
