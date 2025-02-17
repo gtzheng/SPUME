@@ -18,16 +18,98 @@ import warnings
 
 # https://github.com/Wangt-CN/CaaM
 # https://drive.google.com/drive/folders/17-jl0fF9BxZupG75BtpOqJaB6dJ2Pv8O?usp=sharing
-TRAINING_DIST = {'dog': ['on_grass', 'in_water', 'in_cage', 'eating', 'on_beach', 'lying', 'running'],
-                 'cat': ['on_snow', 'at_home', 'in_street', 'walking', 'in_river', 'in_cage', 'eating'],
-                 'bear': ['in_forest', 'black', 'brown', 'eating_grass', 'in_water', 'lying', 'on_snow'],
-                 'bird': ['on_ground', 'in_hand', 'on_branch', 'flying', 'eating', 'on_grass', 'standing'],
-                 'cow': ['in_river', 'lying', 'standing', 'eating', 'in_forest', 'on_grass', 'on_snow'],
-                 'elephant': ['in_zoo', 'in_circus', 'in_forest', 'in_river', 'eating', 'standing', 'on_grass'],
-                 'horse': ['on_beach', 'aside_people', 'running', 'lying', 'on_grass', 'on_snow', 'in_forest'],
-                 'monkey': ['sitting', 'walking', 'in_water', 'on_snow', 'in_forest', 'eating', 'on_grass'],
-                 'rat': ['at_home', 'in_hole', 'in_cage', 'in_forest', 'in_water', 'on_grass', 'eating'],
-                 'sheep': ['eating', 'on_road', 'walking', 'on_snow', 'on_grass', 'lying', 'in_forest']}
+TRAINING_DIST = {
+    "dog": [
+        "on_grass",
+        "in_water",
+        "in_cage",
+        "eating",
+        "on_beach",
+        "lying",
+        "running",
+    ],
+    "cat": [
+        "on_snow",
+        "at_home",
+        "in_street",
+        "walking",
+        "in_river",
+        "in_cage",
+        "eating",
+    ],
+    "bear": [
+        "in_forest",
+        "black",
+        "brown",
+        "eating_grass",
+        "in_water",
+        "lying",
+        "on_snow",
+    ],
+    "bird": [
+        "on_ground",
+        "in_hand",
+        "on_branch",
+        "flying",
+        "eating",
+        "on_grass",
+        "standing",
+    ],
+    "cow": [
+        "in_river",
+        "lying",
+        "standing",
+        "eating",
+        "in_forest",
+        "on_grass",
+        "on_snow",
+    ],
+    "elephant": [
+        "in_zoo",
+        "in_circus",
+        "in_forest",
+        "in_river",
+        "eating",
+        "standing",
+        "on_grass",
+    ],
+    "horse": [
+        "on_beach",
+        "aside_people",
+        "running",
+        "lying",
+        "on_grass",
+        "on_snow",
+        "in_forest",
+    ],
+    "monkey": [
+        "sitting",
+        "walking",
+        "in_water",
+        "on_snow",
+        "in_forest",
+        "eating",
+        "on_grass",
+    ],
+    "rat": [
+        "at_home",
+        "in_hole",
+        "in_cage",
+        "in_forest",
+        "in_water",
+        "on_grass",
+        "eating",
+    ],
+    "sheep": [
+        "eating",
+        "on_road",
+        "walking",
+        "on_snow",
+        "on_grass",
+        "lying",
+        "in_forest",
+    ],
+}
 
 
 def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
@@ -38,8 +120,8 @@ def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
         NICO_CXT_DIC_PATH (str): path to the context dictionary.
         NICO_CLASS_DIC_PATH (str): path to the class dictionary.
     """
-    cxt_dic = json.load(open(NICO_CXT_DIC_PATH, 'r'))
-    class_dic = json.load(open(NICO_CLASS_DIC_PATH, 'r'))
+    cxt_dic = json.load(open(NICO_CXT_DIC_PATH, "r"))
+    class_dic = json.load(open(NICO_CLASS_DIC_PATH, "r"))
     cxt_index2name = {i: n for n, i in cxt_dic.items()}
     class_index2name = {i: n for n, i in class_dic.items()}
 
@@ -52,7 +134,7 @@ def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
     for split_id, split in enumerate(["train", "val", "test"]):
         all_file_name = os.listdir(os.path.join(NICO_DATA_FOLDER, split))
         for file_name in all_file_name:
-            label, context, index = file_name.split('_')
+            label, context, index = file_name.split("_")
             file_names.append(os.path.join(split, file_name))
             contexts.append(int(context))
             context_names.append(cxt_index2name[int(context)])
@@ -64,10 +146,8 @@ def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
     contexts_unique = sorted(list(set(contexts)))
     label2unique = {l: i for i, l in enumerate(labels_unique)}
     context2unique = {c: i for i, c in enumerate(contexts_unique)}
-    uniquelabel2name = {
-        label2unique[l]: class_index2name[l] for l in labels_unique}
-    uniquecontext2name = {
-        context2unique[c]: cxt_index2name[c] for c in contexts_unique}
+    uniquelabel2name = {label2unique[l]: class_index2name[l] for l in labels_unique}
+    uniquecontext2name = {context2unique[c]: cxt_index2name[c] for c in contexts_unique}
 
     name2uniquelabel = {n: l for l, n in uniquelabel2name.items()}
     name2uniquecontext = {n: c for c, n in uniquecontext2name.items()}
@@ -82,7 +162,8 @@ def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
             context = context2unique[contexts[i]]
             context_name = context_names[i]
             f.write(
-                f"{i},{file_name},{label},{label_name},{split_id},{context},{context_name}\n")
+                f"{i},{file_name},{label},{label_name},{split_id},{context},{context_name}\n"
+            )
 
 
 def get_transform_nico(train, augment_data=True):
@@ -98,25 +179,37 @@ def get_transform_nico(train, augment_data=True):
     mean = [0.52418953, 0.5233741, 0.44896784]
     std = [0.21851876, 0.2175944, 0.22552039]
     if train and augment_data:
-        transform = transforms.Compose([
-            transforms.Resize(224),
-            transforms.RandomCrop(224, padding=16),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(15),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std)
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.Resize(224),
+                transforms.RandomCrop(224, padding=16),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomRotation(15),
+                transforms.ToTensor(),
+                transforms.Normalize(mean, std),
+            ]
+        )
     else:
-        transform = transforms.Compose([
-            transforms.Resize([224, 224]),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std)
-        ])
+        transform = transforms.Compose(
+            [
+                transforms.Resize([224, 224]),
+                transforms.ToTensor(),
+                transforms.Normalize(mean, std),
+            ]
+        )
     return transform
 
 
 class NICO_dataset(Dataset):
-    def __init__(self, basedir, split, balance_factor=1.0, transform=None, training_dist=None, concept_embed=None):
+    def __init__(
+        self,
+        basedir,
+        split,
+        balance_factor=1.0,
+        transform=None,
+        training_dist=None,
+        concept_embed=None,
+    ):
         """Initialize the NICO dataset.
 
         Args:
@@ -136,7 +229,6 @@ class NICO_dataset(Dataset):
         print(len(metadata_df))
         split_i = ["train", "val", "test"].index(split)
         self.metadata_df = metadata_df[metadata_df["split"] == split_i]
-        
 
         self.y_array = self.metadata_df["y"].values
         labelnames = self.metadata_df["label_name"].values
@@ -151,8 +243,7 @@ class NICO_dataset(Dataset):
             self.contextname2index[contextnames[i]] = self.p_array[i]
         self.filename_array = self.metadata_df["img_filename"].values
         if balance_factor != 1:
-            sel_indexes = self.reformulate_data_dist(
-                balance_factor, training_dist)
+            sel_indexes = self.reformulate_data_dist(balance_factor, training_dist)
             self.filename_array = self.filename_array[sel_indexes]
             self.y_array = self.y_array[sel_indexes]
             self.p_array = self.p_array[sel_indexes]
@@ -160,9 +251,7 @@ class NICO_dataset(Dataset):
         self.n_classes = np.unique(self.y_array).size
         self.n_places = np.unique(self.p_array).size
 
-        self.group_array = (
-            self.y_array * self.n_places + self.p_array
-        ).astype("int")
+        self.group_array = (self.y_array * self.n_places + self.p_array).astype("int")
         self.n_groups = self.n_classes * self.n_places
         self.group_counts = (
             (
@@ -179,8 +268,7 @@ class NICO_dataset(Dataset):
             with open(concept_embed, "rb") as f:
                 self.embeddings = pickle.load(f)
             if balance_factor != 1:
-                self.embeddings = self.embeddings[split_info ==
-                                                  split_i][sel_indexes]
+                self.embeddings = self.embeddings[split_info == split_i][sel_indexes]
             else:
                 self.embeddings = self.embeddings[split_info == split_i]
         else:
@@ -201,19 +289,20 @@ class NICO_dataset(Dataset):
         np.random.seed(seed)
         for img_class in training_dist.keys():
             cls_num = len(training_dist[img_class])
-            class_idx = np.where(np.array(self.y_array) ==
-                                 self.labelname2index[img_class])[0]
+            class_idx = np.where(
+                np.array(self.y_array) == self.labelname2index[img_class]
+            )[0]
             # img_class_labels = [self.y_array[idx] for idx in class_idx]
             # img_class_datas = [self.filename_array[idx] for idx in class_idx]
             img_class_contexts = [self.p_array[idx] for idx in class_idx]
 
             for index, img_context in enumerate(training_dist[img_class]):
                 img_context_label = self.contextname2index[img_context]
-                idx = np.where(np.array(img_class_contexts)
-                               == img_context_label)[0]
+                idx = np.where(np.array(img_class_contexts) == img_context_label)[0]
                 img_context_num = idx.shape[0]
                 select_context_num = int(
-                    img_context_num * (balance_factor**(index / (cls_num - 1.0))))
+                    img_context_num * (balance_factor ** (index / (cls_num - 1.0)))
+                )
                 np.random.shuffle(idx)
 
                 selec_idx = idx[:select_context_num]

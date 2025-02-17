@@ -12,6 +12,7 @@ from tqdm import tqdm
 import warnings
 
 from torchvision.datasets import ImageFolder
+
 # wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar --no-check-certificate
 # wget https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar --no-check-certificate
 
@@ -125,16 +126,14 @@ def collect_dataset_info(dir, class_to_idx, data="ImageNet"):
         for root, _, fnames in sorted(os.walk(d)):
             for fname in fnames:
                 if is_image_file(fname):
-                    item = (os.path.join(target, fname),
-                            target, class_to_idx_[target])
+                    item = (os.path.join(target, fname), target, class_to_idx_[target])
                     images.append(item)
 
     return images, class_to_idx_
 
 
 def find_classes(dir):
-    classes = [d for d in os.listdir(
-        dir) if os.path.isdir(os.path.join(dir, d))]
+    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
@@ -156,7 +155,8 @@ def prepare_imagenet9_metadata(base_dir):
             data_root = os.path.join(base_dir, split)
             classes, class_to_idx = find_classes(data_root)
             image_info, _ = collect_dataset_info(
-                data_root, class_to_idx, data="ImageNet")
+                data_root, class_to_idx, data="ImageNet"
+            )
 
             for idx, info in enumerate(image_info):
                 path, target, class_id = info
@@ -180,8 +180,7 @@ def prepare_imageneta_metadata(data_root):
         image_id = 0
 
         classes, class_to_idx = find_classes(data_root)
-        image_info, _ = collect_dataset_info(
-            data_root, class_to_idx, data="ImageNet-A")
+        image_info, _ = collect_dataset_info(data_root, class_to_idx, data="ImageNet-A")
 
         for idx, info in enumerate(image_info):
             path, target, class_id = info
@@ -192,12 +191,7 @@ def prepare_imageneta_metadata(data_root):
 
 class ImageNet9(torch.utils.data.Dataset):
     def __init__(
-        self,
-        basedir,
-        split,
-        transform=None,
-        concept_embed=None,
-        cluster_file=None
+        self, basedir, split, transform=None, concept_embed=None, cluster_file=None
     ):
         """Initialize the ImageNet-9 dataset.
 
@@ -226,20 +220,23 @@ class ImageNet9(torch.utils.data.Dataset):
         self.split = split
         if split == "val":
             val_cluster_df = pd.read_csv(cluster_file)
-            def add_val_func(x): return os.path.join("val", x)
+
+            def add_val_func(x):
+                return os.path.join("val", x)
+
             val_cluster_df["path"] = val_cluster_df["path"].apply(add_val_func)
-            val_cluster_df = val_cluster_df.rename(
-                columns={"path": "img_filename"})
-            self.metadata_df = self.metadata_df.merge(
-                val_cluster_df, on="img_filename")
-            self.p_arrays = [self.metadata_df["cluster1"].values,
-                             self.metadata_df["cluster2"].values,
-                             self.metadata_df["cluster3"].values
-                             ]
+            val_cluster_df = val_cluster_df.rename(columns={"path": "img_filename"})
+            self.metadata_df = self.metadata_df.merge(val_cluster_df, on="img_filename")
+            self.p_arrays = [
+                self.metadata_df["cluster1"].values,
+                self.metadata_df["cluster2"].values,
+                self.metadata_df["cluster3"].values,
+            ]
             self.n_places = len(np.unique(self.p_arrays[0]))
-            self.group_arrays = [(
-                self.y_array * self.n_places + self.p_arrays[i]
-            ).astype("int") for i in range(3)]
+            self.group_arrays = [
+                (self.y_array * self.n_places + self.p_arrays[i]).astype("int")
+                for i in range(3)
+            ]
             self.n_groups = self.n_classes * self.n_places
 
         if concept_embed and os.path.exists(concept_embed) and split != "test":

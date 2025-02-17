@@ -1,8 +1,8 @@
-
 import json
 import yaml
 import argparse
 from easydict import EasyDict
+
 
 def get_config_from_yaml(yaml_file):
     """
@@ -27,54 +27,24 @@ def get_args():
     """
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument(
-        '-c', '--config',
-        metavar='C',
-        default=None,
-        help='The Configuration file')
+        "-c", "--config", metavar="C", default=None, help="The Configuration file"
+    )
 
     argparser.add_argument(
-        '-s', '--seed',
-        default=100,
-        type=int,
-        help='The random seed')
-    argparser.add_argument(
-        '--n_gpu',
-        default=1,
-        type=int,
-        help='Number of GPUs')
-    argparser.add_argument(
-        '--temp',
-        default=-1,
-        type=float,
-        help='temperature')
-    argparser.add_argument(
-        '--lr',
-        default=-1,
-        type=float,
-        help='learning rate')
+        "-s", "--seed", default=100, type=int, help="The random seed"
+    )
+    argparser.add_argument("--n_gpu", default=1, type=int, help="Number of GPUs")
+    argparser.add_argument("--temp", default=-1, type=float, help="temperature")
+    argparser.add_argument("--lr", default=-1, type=float, help="learning rate")
 
-    argparser.add_argument(
-        '--score_func',
-        default=None,
-        help='The path to ckpt')
-    argparser.add_argument(
-        '--backbone',
-        default=None,
-        help='The path to ckpt')
-    argparser.add_argument(
-        '--ckpt',
-        default=None,
-        help='The path to ckpt')
-    argparser.add_argument(
-        '--tag',
-        default=None,
-        help='additional information')
-    argparser.add_argument(
-        '--vlm',
-        default=None,
-        help='choose VLM')
+    argparser.add_argument("--score_func", default=None, help="The path to ckpt")
+    argparser.add_argument("--backbone", default=None, help="The path to ckpt")
+    argparser.add_argument("--ckpt", default=None, help="The path to ckpt")
+    argparser.add_argument("--tag", default=None, help="additional information")
+    argparser.add_argument("--vlm", default=None, help="choose VLM")
     args = argparser.parse_args()
     return args
+
 
 def get_config():
     """
@@ -87,9 +57,9 @@ def get_config():
     config_file = args.config
 
     # load experimental configuration
-    if config_file.endswith('json'):
+    if config_file.endswith("json"):
         config = get_config_from_json(config_file)
-    elif config_file.endswith('yaml'):
+    elif config_file.endswith("yaml"):
         config = get_config_from_yaml(config_file)
     else:
         raise Exception("Only .json and .yaml are supported!")
@@ -115,4 +85,3 @@ def get_config():
         config.ckpt = args.ckpt
     config.config_file = args.config
     return config
-

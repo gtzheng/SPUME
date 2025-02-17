@@ -1,4 +1,10 @@
-from transformers import VisionEncoderDecoderModel, ViTFeatureExtractor, AutoTokenizer, BlipProcessor, BlipForConditionalGeneration
+from transformers import (
+    VisionEncoderDecoderModel,
+    ViTFeatureExtractor,
+    AutoTokenizer,
+    BlipProcessor,
+    BlipForConditionalGeneration,
+)
 import torch
 from PIL import Image
 import os
@@ -7,6 +13,7 @@ import utils
 import argparse
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
+
 
 def collate_fn(data):
     """Transform a list of tuples into a batch
@@ -36,10 +43,9 @@ class ImageData(Dataset):
         self.meta_data = meta_data
         self.img_folder = img_folder
 
-
     def __len__(self):
         return len(self.meta_data)
-    
+
     def __getitem__(self, idx):
         """Return an image, its label, and its name
 
@@ -49,9 +55,9 @@ class ImageData(Dataset):
         Returns:
             (PIL.Image.Image, int, str): an image, its label, and its name
         """
-     
+
         image_path = self.meta_data.iloc[idx]["img_filename"]
-        temp = Image.open(os.path.join(self.img_folder,image_path))
+        temp = Image.open(os.path.join(self.img_folder, image_path))
         if temp.mode != "RGB":
             temp = temp.convert(mode="RGB")
         image = temp.copy()
@@ -59,6 +65,7 @@ class ImageData(Dataset):
         image_name = os.path.split(image_path)[-1]
         label = self.meta_data.iloc[idx]["y"]
         return image, label, image_name
+
 
 class VITGPT2_CAPTIONING:
     def __init__(self, max_length=16, num_beams=4):
@@ -74,15 +81,16 @@ class VITGPT2_CAPTIONING:
         self.feature_extractor = ViTFeatureExtractor.from_pretrained(
             "nlpconnect/vit-gpt2-image-captioning"
         )
-        self.tokenizer = AutoTokenizer.from_pretrained("nlpconnect/vit-gpt2-image-captioning")
-        gpu = ",".join([str(i) for i in utils.get_free_gpu()[0 : 1]])
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "nlpconnect/vit-gpt2-image-captioning"
+        )
+        gpu = ",".join([str(i) for i in utils.get_free_gpu()[0:1]])
         utils.set_gpu(gpu)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.cuda()
         self.model.eval()
 
         self.gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
-
 
     def predict_step(self, data, names):
         """Generate image captions for a batch of images
@@ -95,7 +103,9 @@ class VITGPT2_CAPTIONING:
             list[str]: a list of image captions in the format of "image_name,caption"
         """
         with torch.no_grad():
-            pixel_values = self.feature_extractor(images=data, return_tensors="pt").pixel_values
+            pixel_values = self.feature_extractor(
+                images=data, return_tensors="pt"
+            ).pixel_values
             pixel_values = pixel_values.cuda()
             output_ids = self.model.generate(pixel_values, **self.gen_kwargs)
             preds = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
@@ -132,19 +142,26 @@ class VITGPT2_CAPTIONING:
                 return save_path
 
         dataset = ImageData(img_folder, metadata_df)
-        dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=4,collate_fn=collate_fn)
+        dataloader = DataLoader(
+            dataset, batch_size=batch_size, num_workers=4, collate_fn=collate_fn
+        )
         count = 0
         timer = utils.Timer()
         with open(save_path, "w") as fout:
             for data, labels, names in dataloader:
                 msgs = self.predict_step(data, names)
-                write_info = '\n'.join([f"{msgs[i]},{labels[i]}" for i in range(len(msgs))])
+                write_info = "\n".join(
+                    [f"{msgs[i]},{labels[i]}" for i in range(len(msgs))]
+                )
                 fout.write(f"{write_info}\n")
                 fout.flush()
                 count += batch_size
                 elapsed_time = timer.t()
                 est_time = elapsed_time / count * len(metadata_df)
-                print(f"Progress: {count / len(metadata_df) * 100:.2f}% {utils.time_str(elapsed_time)}/est:{utils.time_str(est_time)}   ", end="\r")
+                print(
+                    f"Progress: {count / len(metadata_df) * 100:.2f}% {utils.time_str(elapsed_time)}/est:{utils.time_str(est_time)}   ",
+                    end="\r",
+                )
         return save_path
 
 
@@ -156,9 +173,13 @@ class BLIP_CAPTIONING:
             max_length (int, optional): Maximum description length. Defaults to 16.
             num_beams (int, optional): Number of beams used in beam search. Defaults to 4.
         """
-        self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
-        self.model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large").to("cuda")
-    
+        self.processor = BlipProcessor.from_pretrained(
+            "Salesforce/blip-image-captioning-large"
+        )
+        self.model = BlipForConditionalGeneration.from_pretrained(
+            "Salesforce/blip-image-captioning-large"
+        ).to("cuda")
+
         gpu = ",".join([str(i) for i in utils.get_free_gpu()[0:1]])
         utils.set_gpu(gpu)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -179,7 +200,9 @@ class BLIP_CAPTIONING:
         """
         with torch.no_grad():
             text = "there"
-            inputs = self.processor(data, [text]*len(data), return_tensors="pt").to("cuda")
+            inputs = self.processor(data, [text] * len(data), return_tensors="pt").to(
+                "cuda"
+            )
             output_ids = self.model.generate(**inputs)
             preds = self.processor.batch_decode(output_ids, skip_special_tokens=True)
 
@@ -204,10 +227,9 @@ class BLIP_CAPTIONING:
         """
         if not os.path.exists(csv_path):
             raise ValueError(f"{csv_path} does not exist")
-        
+
         metadata_df = pd.read_csv(csv_path)
         metadata_df = metadata_df[metadata_df["split"] != 2]
-      
 
         save_path = os.path.join(img_folder, "blip_captions.csv")
         if os.path.exists(save_path):
@@ -217,17 +239,24 @@ class BLIP_CAPTIONING:
                 print(f"{save_path} has been generated")
                 return
         dataset = ImageData(img_folder, metadata_df)
-        dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=4,collate_fn=collate_fn)
+        dataloader = DataLoader(
+            dataset, batch_size=batch_size, num_workers=4, collate_fn=collate_fn
+        )
         timer = utils.Timer()
         count = 0
         with open(save_path, "w") as fout:
             for data, labels, names in dataloader:
                 msgs = self.predict_step(data, names)
-                write_info = '\n'.join([f"{msgs[i]},{labels[i]}" for i in range(len(msgs))])
+                write_info = "\n".join(
+                    [f"{msgs[i]},{labels[i]}" for i in range(len(msgs))]
+                )
                 fout.write(f"{write_info}\n")
                 fout.flush()
                 count += batch_size
                 elapsed_time = timer.t()
                 est_time = elapsed_time / count * len(metadata_df)
-                print(f"Progress: {count / len(metadata_df) * 100:.2f}% {utils.time_str(elapsed_time)}/est:{utils.time_str(est_time)}   ", end="\r")    
+                print(
+                    f"Progress: {count / len(metadata_df) * 100:.2f}% {utils.time_str(elapsed_time)}/est:{utils.time_str(est_time)}   ",
+                    end="\r",
+                )
         return save_path

@@ -20,7 +20,6 @@ from models.resnet import resnet18, resnet50
 from tqdm import tqdm
 
 
-
 def test_model(model, loader):
     """Evaluate the model on the loader
 
@@ -77,6 +76,7 @@ def test_model(model, loader):
     worst_acc_avg /= num_group_types
     return avg_acc, worst_acc_avg, unbiased_acc_avg
 
+
 def test_model_pseudo(model, loader, num_threshold=100):
     """Evaluate the model on the loader.
 
@@ -114,7 +114,7 @@ def test_model_pseudo(model, loader, num_threshold=100):
         groups = groups_psu[:, a]
         uni_groups = np.unique(groups)
         n_groups = len(uni_groups)
-        for g in range(n_groups//2, n_groups):
+        for g in range(n_groups // 2, n_groups):
             gres = res[groups == g]
             if len(gres) > num_threshold:
                 acc_group.append(gres.sum() / len(gres))
@@ -130,19 +130,20 @@ def test_model_pseudo(model, loader, num_threshold=100):
 
     return avg_acc, attr_worst_acc.min(), attr_avg_acc.mean()
 
+
 if __name__ == "__main__":
     args = utils.get_config()
     train_loader, idx_train_loader, val_loader, test_loader = get_loader(args)
-    
+
     # model = REPModel(args.backbone, train_loader.dataset.n_classes, args.pretrained)
     # model.cuda()
     # model.init(idx_train_loader)
     # model.load_state_dict(torch.load(args.ckpt))
-    
+
     model = ERMCosineModel(args.backbone, 2, True)
     model.cuda()
     model.load_state_dict(torch.load(args.ckpt))
-    
+
     avg_acc, worst_acc, unbiased_acc = test_model(model, val_loader)
     print(f"{avg_acc:.6f}, {worst_acc:.6f}, {unbiased_acc:.6f}")
     avg_acc, worst_acc, unbiased_acc = test_model(model, test_loader)

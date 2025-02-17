@@ -13,6 +13,7 @@ from tqdm import tqdm
 # https://www.kaggle.com/datasets/jessicali9530/celeba-dataset
 # celeba_metadata: https://github.com/PolinaKirichenko/deep_feature_reweighting
 
+
 class IdxDataset(Dataset):
     def __init__(self, dataset):
         """Initialize an indexed dataset
@@ -53,7 +54,7 @@ class BiasedDataset(Dataset):
             raise (f"Unknown split {split}")
         metadata_df = pd.read_csv(os.path.join(basedir, "metadata.csv"))
         split_info = metadata_df["split"].values
-        split_info = split_info[split_info != 2] # train and val
+        split_info = split_info[split_info != 2]  # train and val
         print(len(metadata_df))
         self.metadata_df = metadata_df[metadata_df["split"] == split_i]
         print(len(self.metadata_df))
@@ -85,8 +86,7 @@ class BiasedDataset(Dataset):
             .float()
         )
         self.p_counts = (
-            (torch.arange(self.n_places).unsqueeze(
-                1) == torch.from_numpy(self.p_array))
+            (torch.arange(self.n_places).unsqueeze(1) == torch.from_numpy(self.p_array))
             .sum(1)
             .float()
         )
@@ -163,8 +163,7 @@ def get_transform_biased(target_resolution, train, augment_data):
                 ),
                 transforms.CenterCrop(target_resolution),
                 transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [
-                                     0.229, 0.224, 0.225]),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ]
         )
     else:
@@ -178,8 +177,7 @@ def get_transform_biased(target_resolution, train, augment_data):
                 ),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [
-                                     0.229, 0.224, 0.225]),
+                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ]
         )
     return transform

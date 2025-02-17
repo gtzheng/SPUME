@@ -1,4 +1,3 @@
-
 from torch.utils.data import DataLoader, RandomSampler
 from data.biased_dataset import BiasedDataset, get_transform_biased, IdxDataset
 import torch
@@ -29,7 +28,7 @@ def add_val_to_train(trainset, valset):
     """
     val_indexes = torch.randperm(len(valset))
     train_indexes = torch.randperm(len(trainset))
-    
+
     num_sel = len(valset) // 2
 
     trainset.y_array = np.concatenate(
@@ -72,7 +71,7 @@ def add_val_to_train(trainset, valset):
     train_group_counts = [
         (trainset.group_array == g).sum().item() for g in range(trainset.n_groups)
     ]
-    
+
     valset.y_array = valset.y_array[val_indexes[num_sel:]]
     valset.p_array = valset.p_array[val_indexes[num_sel:]]
     valset.group_array = valset.group_array[val_indexes[num_sel:]]
@@ -84,8 +83,18 @@ def add_val_to_train(trainset, valset):
         (valset.group_array == g).sum().item() for g in range(valset.n_groups)
     ]
     return trainset, valset
-    
-def get_biased_loader(data_folder, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
+
+
+def get_biased_loader(
+    data_folder,
+    augmentation,
+    batch_size,
+    attr_embed_path=None,
+    batch_sampler=None,
+    num_workers=8,
+    use_val=False,
+    fast_train=0,
+):
     """Get the dataloaders for the Waterbirds/CelebA dataset.
 
     Args:
@@ -111,29 +120,28 @@ def get_biased_loader(data_folder, augmentation, batch_size, attr_embed_path=Non
         basedir=data_folder,
         split="train",
         transform=train_transform if augmentation else test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     trainset_ref = BiasedDataset(
         basedir=data_folder,
         split="train",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     train_idx_dataset = IdxDataset(trainset_ref)
 
-    
     valset = BiasedDataset(
         basedir=data_folder,
         split="val",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
 
     testset = BiasedDataset(
         basedir=data_folder,
         split="test",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     if use_val:
         trainset, valset = add_val_to_train(trainset, valset)
@@ -142,36 +150,57 @@ def get_biased_loader(data_folder, augmentation, batch_size, attr_embed_path=Non
         "pin_memory": True,
     }
     if batch_sampler:
-        train_loader = DataLoader(trainset, batch_sampler=batch_sampler, **loader_kwargs)
+        train_loader = DataLoader(
+            trainset, batch_sampler=batch_sampler, **loader_kwargs
+        )
     else:
-        if fast_train > 0 and len(trainset) > batch_size*fast_train:
+        if fast_train > 0 and len(trainset) > batch_size * fast_train:
             train_loader = DataLoader(
-            trainset,
-            sampler=RandomSampler(trainset, num_samples=batch_size*fast_train),
-            pin_memory=True,
-            num_workers=num_workers,
+                trainset,
+                sampler=RandomSampler(trainset, num_samples=batch_size * fast_train),
+                pin_memory=True,
+                num_workers=num_workers,
             )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
-                sampler=RandomSampler(train_idx_dataset, num_samples=batch_size*fast_train),
+                sampler=RandomSampler(
+                    train_idx_dataset, num_samples=batch_size * fast_train
+                ),
                 pin_memory=True,
                 num_workers=num_workers,
             )
         else:
-            train_loader = DataLoader(trainset, shuffle=True, batch_size=batch_size, **loader_kwargs)
+            train_loader = DataLoader(
+                trainset, shuffle=True, batch_size=batch_size, **loader_kwargs
+            )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
                 batch_size=batch_size,
                 pin_memory=True,
                 num_workers=num_workers,
             )
-    val_loader = DataLoader(valset, shuffle=False, batch_size=batch_size, **loader_kwargs)
-    test_loader = DataLoader(testset, shuffle=False, batch_size=batch_size, **loader_kwargs)
+    val_loader = DataLoader(
+        valset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
+    test_loader = DataLoader(
+        testset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
 
     return train_loader, idx_train_loader, val_loader, test_loader
 
 
-def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
+def get_imagenet9_loader(
+    im9_data_folder,
+    imA_data_folder,
+    im9_cluster_file,
+    augmentation,
+    batch_size,
+    attr_embed_path=None,
+    batch_sampler=None,
+    num_workers=8,
+    use_val=False,
+    fast_train=0,
+):
     """Get the dataloaders for the ImageNet-9 dataset.
 
     Args:
@@ -191,28 +220,27 @@ def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, aug
     """
     train_transform = get_imagenet_transform(train=True, augment_data=True)
     test_transform = get_imagenet_transform(train=False, augment_data=False)
-    
+
     trainset = ImageNet9(
         basedir=im9_data_folder,
         split="train",
         transform=train_transform if augmentation else test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     trainset_ref = ImageNet9(
         basedir=im9_data_folder,
         split="train",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     train_idx_dataset = IdxDataset(trainset_ref)
 
-    
     valset = ImageNet9(
         basedir=im9_data_folder,
         split="val",
         transform=test_transform,
         concept_embed=attr_embed_path,
-        cluster_file=im9_cluster_file
+        cluster_file=im9_cluster_file,
     )
     if use_val:
         trainset, valset = add_val_to_train(trainset, valset)
@@ -221,7 +249,7 @@ def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, aug
         basedir=imA_data_folder,
         transform=test_transform,
     )
-    
+
     if use_val:
         trainset, valset = add_val_to_train(trainset, valset)
 
@@ -231,25 +259,29 @@ def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, aug
     }
 
     if batch_sampler:
-        train_loader = DataLoader(trainset, batch_sampler=batch_sampler, **loader_kwargs)
+        train_loader = DataLoader(
+            trainset, batch_sampler=batch_sampler, **loader_kwargs
+        )
     else:
-        if fast_train>0 and len(trainset) > batch_size*fast_train:
+        if fast_train > 0 and len(trainset) > batch_size * fast_train:
             train_loader = DataLoader(
                 trainset,
                 batch_size=batch_size,
-                sampler=RandomSampler(trainset, num_samples=batch_size*fast_train),
+                sampler=RandomSampler(trainset, num_samples=batch_size * fast_train),
                 pin_memory=True,
                 num_workers=num_workers,
             )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
                 batch_size=batch_size,
-                sampler=RandomSampler(trainset, num_samples=batch_size*fast_train),
+                sampler=RandomSampler(trainset, num_samples=batch_size * fast_train),
                 pin_memory=True,
                 num_workers=num_workers,
             )
         else:
-            train_loader = DataLoader(trainset, shuffle=True, batch_size=batch_size, **loader_kwargs)
+            train_loader = DataLoader(
+                trainset, shuffle=True, batch_size=batch_size, **loader_kwargs
+            )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
                 batch_size=batch_size,
@@ -258,12 +290,25 @@ def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, aug
                 num_workers=num_workers,
             )
 
-    val_loader = DataLoader(valset, shuffle=False, batch_size=batch_size, **loader_kwargs)
-    test_loader = DataLoader(testset, shuffle=False, batch_size=batch_size, **loader_kwargs)
+    val_loader = DataLoader(
+        valset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
+    test_loader = DataLoader(
+        testset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
     return train_loader, idx_train_loader, val_loader, test_loader
 
 
-def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
+def get_nico_loader(
+    data_folder,
+    augmentation,
+    batch_size,
+    attr_embed_path=None,
+    batch_sampler=None,
+    num_workers=8,
+    use_val=False,
+    fast_train=0,
+):
     """Get the dataloaders for the NICO dataset.
 
     Args:
@@ -281,14 +326,14 @@ def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None,
     """
     train_transform = get_transform_nico(train=True, augment_data=True)
     test_transform = get_transform_nico(train=False, augment_data=False)
-    
+
     trainset = NICO_dataset(
         basedir=data_folder,
         split="train",
         balance_factor=1.0,
         training_dist=TRAINING_DIST,
         transform=train_transform if augmentation else test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     trainset_ref = NICO_dataset(
         basedir=data_folder,
@@ -296,20 +341,20 @@ def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None,
         balance_factor=1.0,
         training_dist=TRAINING_DIST,
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     train_idx_dataset = IdxDataset(trainset_ref)
     valset = NICO_dataset(
         basedir=data_folder,
         split="val",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
     testset = NICO_dataset(
         basedir=data_folder,
         split="test",
         transform=test_transform,
-        concept_embed=attr_embed_path
+        concept_embed=attr_embed_path,
     )
 
     if use_val:
@@ -321,25 +366,29 @@ def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None,
     }
 
     if batch_sampler:
-        train_loader = DataLoader(trainset, batch_sampler=batch_sampler, **loader_kwargs)
+        train_loader = DataLoader(
+            trainset, batch_sampler=batch_sampler, **loader_kwargs
+        )
     else:
-        if fast_train>0 and len(trainset) > batch_size*fast_train:
+        if fast_train > 0 and len(trainset) > batch_size * fast_train:
             train_loader = DataLoader(
                 trainset,
                 batch_size=batch_size,
-                sampler=RandomSampler(trainset, num_samples=batch_size*fast_train),
+                sampler=RandomSampler(trainset, num_samples=batch_size * fast_train),
                 pin_memory=True,
                 num_workers=num_workers,
             )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
                 batch_size=batch_size,
-                sampler=RandomSampler(trainset, num_samples=batch_size*fast_train),
+                sampler=RandomSampler(trainset, num_samples=batch_size * fast_train),
                 pin_memory=True,
                 num_workers=num_workers,
             )
         else:
-            train_loader = DataLoader(trainset, shuffle=True, batch_size=batch_size, **loader_kwargs)
+            train_loader = DataLoader(
+                trainset, shuffle=True, batch_size=batch_size, **loader_kwargs
+            )
             idx_train_loader = DataLoader(
                 train_idx_dataset,
                 batch_size=batch_size,
@@ -348,8 +397,12 @@ def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None,
                 num_workers=num_workers,
             )
 
-    val_loader = DataLoader(valset, shuffle=False, batch_size=batch_size, **loader_kwargs)
-    test_loader = DataLoader(testset, shuffle=False, batch_size=batch_size, **loader_kwargs)
+    val_loader = DataLoader(
+        valset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
+    test_loader = DataLoader(
+        testset, shuffle=False, batch_size=batch_size, **loader_kwargs
+    )
 
     return train_loader, idx_train_loader, val_loader, test_loader
 
@@ -370,10 +423,38 @@ def get_loader(args, batch_sampler=None):
         attr_embed_path = args.blip_attr_embed_path
 
     if args.dataset == "waterbirds" or args.dataset == "celeba":
-        train_loader, idx_train_loader, val_loader, test_loader = get_biased_loader(args.data_folder, args.augmentation, args.batch_size, attr_embed_path, batch_sampler, args.num_workers, args.use_val, args.fast_train)
+        train_loader, idx_train_loader, val_loader, test_loader = get_biased_loader(
+            args.data_folder,
+            args.augmentation,
+            args.batch_size,
+            attr_embed_path,
+            batch_sampler,
+            args.num_workers,
+            args.use_val,
+            args.fast_train,
+        )
     if args.dataset == "imagenet-9":
-        train_loader, idx_train_loader, val_loader, test_loader = get_imagenet9_loader(args.im9_data_folder, args.imA_data_folder, args.im9_cluster_file, args.augmentation, args.batch_size, attr_embed_path, batch_sampler, args.num_workers, args.use_val, args.fast_train)
+        train_loader, idx_train_loader, val_loader, test_loader = get_imagenet9_loader(
+            args.im9_data_folder,
+            args.imA_data_folder,
+            args.im9_cluster_file,
+            args.augmentation,
+            args.batch_size,
+            attr_embed_path,
+            batch_sampler,
+            args.num_workers,
+            args.use_val,
+            args.fast_train,
+        )
     if args.dataset == "nico":
-        train_loader, idx_train_loader, val_loader, test_loader = get_nico_loader(args.data_folder, args.augmentation, args.batch_size, attr_embed_path, batch_sampler, args.num_workers, args.use_val, args.fast_train)
+        train_loader, idx_train_loader, val_loader, test_loader = get_nico_loader(
+            args.data_folder,
+            args.augmentation,
+            args.batch_size,
+            attr_embed_path,
+            batch_sampler,
+            args.num_workers,
+            args.use_val,
+            args.fast_train,
+        )
     return train_loader, idx_train_loader, val_loader, test_loader
-    

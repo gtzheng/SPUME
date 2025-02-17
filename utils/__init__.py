@@ -6,9 +6,11 @@ import time
 from .config import *
 import torch
 
+
 def set_gpu(gpu):
     print("set gpu:", gpu)
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
+
 
 _log_path = None
 
@@ -18,11 +20,12 @@ def set_log_path(path):
     _log_path = path
 
 
-def log(obj, filename='log.txt'):
+def log(obj, filename="log.txt"):
     print(obj)
     if _log_path is not None:
-        with open(os.path.join(_log_path, filename), 'a') as f:
+        with open(os.path.join(_log_path, filename), "a") as f:
             print(obj, file=f)
+
 
 def set_seed(seed):
     """Sets seed"""
@@ -32,6 +35,7 @@ def set_seed(seed):
     np.random.seed(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+
 
 def get_free_gpu():
     gpu_info = subprocess.Popen(
@@ -48,12 +52,9 @@ def get_free_gpu():
     )
     output, error = grep2.communicate()
     memory_available = np.array(
-        [int(x.split(":")[1].strip().split()[0])
-         for x in output.split("\n")[0:-1]]
+        [int(x.split(":")[1].strip().split()[0]) for x in output.split("\n")[0:-1]]
     )
     return np.argsort(memory_available)
-
-
 
 
 def time_str(t):
@@ -94,10 +95,9 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-
 class BestMetric:
     def __init__(self):
-        self.best_val = - 1.0
+        self.best_val = -1.0
         self.best_test = 0.0
 
     def add(self, val, test):
