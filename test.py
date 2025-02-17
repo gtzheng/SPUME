@@ -22,6 +22,15 @@ from tqdm import tqdm
 
 
 def test_model(model, loader):
+    """Evaluate the model on the loader
+
+    Args:
+        model (torch.nn.Module): a prediction model.
+        loader (torch.utils.data.DataLoader): a dataloader.
+
+    Returns:
+        float, float, float: the average accuracy, the worst accuracy, and the unbiased accuracy.
+    """
     count = 0
     acc = 0
     model.eval()
@@ -69,6 +78,16 @@ def test_model(model, loader):
     return avg_acc, worst_acc_avg, unbiased_acc_avg
 
 def test_model_pseudo(model, loader, num_threshold=100):
+    """Evaluate the model on the loader.
+
+    Args:
+        model (torch.nn.Module): a prediction model.
+        loader (torch.utils.data.DataLoader): a dataloader.
+        num_threshold (int, optional): the threshold of the number of samples in a pseudo-group formulated by the extracted concepts. This is used to remove too small groups where the model's performance is not representative. Defaults to 100.
+
+    Returns:
+        float, float, float: the average accuracy, the worst accuracy, and the unbiased accuracy.
+    """
     count = 0
     acc = 0
     model.eval()

@@ -1,6 +1,6 @@
 
 from torch.utils.data import DataLoader, RandomSampler
-from data.biased_dataset import BiasedDataset, get_transform_cub, IdxDataset
+from data.biased_dataset import BiasedDataset, get_transform_biased, IdxDataset
 import torch
 import numpy as np
 
@@ -18,6 +18,15 @@ from data.nico_data import (
 
 
 def add_val_to_train(trainset, valset):
+    """Add a half of the validation set to the training set.
+
+    Args:
+        trainset (torch.utils.data.Dataset): the training dataset.
+        valset (torch.utils.data.Dataset): the validation dataset.
+
+    Returns:
+        torch.utils.data.Dataset, torch.utils.data.Dataset: the updated training (with a half of the original validation data) and validation (containing the remaining half of the original validation data) datasets.
+    """
     val_indexes = torch.randperm(len(valset))
     train_indexes = torch.randperm(len(trainset))
     
@@ -77,10 +86,25 @@ def add_val_to_train(trainset, valset):
     return trainset, valset
     
 def get_biased_loader(data_folder, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
-    train_transform = get_transform_cub(
+    """Get the dataloaders for the Waterbirds/CelebA dataset.
+
+    Args:
+        data_folder (str): path to the dataset.
+        augmentation (bool): choose whether to augment the data.
+        batch_size (int): batch size.
+        attr_embed_path (str, optional): path to the attribute embeddings. Defaults to None.
+        batch_sampler (torch.utils.data.BatchSampler, optional): a batch sampler. Defaults to None.
+        num_workers (int, optional): number of workers. Defaults to 8.
+        use_val (bool, optional): choose whether to use a half of the validation set. Defaults to False.
+        fast_train (int, optional): choose whether to use a subset of the training set for faster training. Defaults to 0. If fast_train > 0, the training set will be subsampled to fast_train*batch_size.
+
+    Returns:
+        torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader: training, training with indexes, validation, and test dataloaders.
+    """
+    train_transform = get_transform_biased(
         target_resolution=(224, 224), train=True, augment_data=True
     )
-    test_transform = get_transform_cub(
+    test_transform = get_transform_biased(
         target_resolution=(224, 224), train=False, augment_data=False
     )
     trainset = BiasedDataset(
@@ -148,6 +172,23 @@ def get_biased_loader(data_folder, augmentation, batch_size, attr_embed_path=Non
 
 
 def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
+    """Get the dataloaders for the ImageNet-9 dataset.
+
+    Args:
+        im9_data_folder (str): path to the ImageNet-9 dataset.
+        imA_data_folder (str): path to the ImageNet-A dataset.
+        im9_cluster_file (str): path to the cluster file.
+        augmentation (bool): choose whether to augment the data.
+        batch_size (int): batch size.
+        attr_embed_path (str, optional): path to the attribute embeddings. Defaults to None.
+        batch_sampler (torch.utils.data.BatchSampler, optional): a batch sampler. Defaults to None.
+        num_workers (int, optional): number of workers. Defaults to 8.
+        use_val (bool, optional): choose whether to use a half of the validation set. Defaults to False.
+        fast_train (int, optional): choose whether to use a subset of the training set for faster training. Defaults to 0. If fast_train > 0, the training set will be subsampled to fast_train*batch_size.
+
+    Returns:
+        torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader: training, training with indexes, validation, and test dataloaders.
+    """
     train_transform = get_imagenet_transform(train=True, augment_data=True)
     test_transform = get_imagenet_transform(train=False, augment_data=False)
     
@@ -223,6 +264,21 @@ def get_imagenet9_loader(im9_data_folder, imA_data_folder, im9_cluster_file, aug
 
 
 def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None, batch_sampler=None, num_workers=8, use_val=False, fast_train=0):
+    """Get the dataloaders for the NICO dataset.
+
+    Args:
+        data_folder (str): path to the NICO dataset.
+        augmentation (bool): choose whether to augment the data.
+        batch_size (int): batch size.
+        attr_embed_path (str, optional): path to the attribute embeddings. Defaults to None.
+        batch_sampler (torch.utils.data.BatchSampler, optional): a batch sampler. Defaults to None.
+        num_workers (int, optional): number of workers. Defaults to 8.
+        use_val (bool, optional): choose whether to use a half of the validation set. Defaults to False.
+        fast_train (int, optional): choose whether to use a subset of the training set for faster training. Defaults to 0. If fast_train > 0, the training set will be subsampled to fast_train*batch_size.
+
+    Returns:
+        torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader: training, training with indexes, validation, and test dataloaders.
+    """
     train_transform = get_transform_nico(train=True, augment_data=True)
     test_transform = get_transform_nico(train=False, augment_data=False)
     
@@ -299,6 +355,15 @@ def get_nico_loader(data_folder, augmentation, batch_size, attr_embed_path=None,
 
 
 def get_loader(args, batch_sampler=None):
+    """Get data loaders for the specified dataset.
+
+    Args:
+        args (argparse.Namespace): arguments.
+        batch_sampler (torch.utils.data.BatchSampler, optional): a batch sampler. Defaults to None.
+
+    Returns:
+        torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader, torch.utils.data.DataLoader: training, training with indexes, validation, and test dataloaders.
+    """
     if args.vlm == "vit-gpt2":
         attr_embed_path = args.vit_gpt2_attr_embed_path
     elif args.vlm == "blip":

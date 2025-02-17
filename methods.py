@@ -11,6 +11,18 @@ import torchvision
 import torch.nn.functional as F
 
 def get_correlated_features(model, dataloader, score_func="tanh-abs-log"):
+    """Calculate the spuriousness scores of the activated concepts for each class using the model, dataloader and score function.
+    An activated concept for a class means that the concept is present in at least one image of that class.
+    A spuriousness score for each activated concept reflects the discrepancy between prediction accuracies on images with and without the concept. A large score indicates a large discrepancy, which suggests that the concept is spurious.
+
+    Args:
+        model (torch.nn.Module): a prediction model.
+        dataloader (torch.utils.data.DataLoader): a dataloader.
+        score_func (str, optional): the type of the score function. Defaults to "tanh-abs-log".
+
+    Returns:
+        dict[int, tuple[np.array, np.array]]: a dictionary of spuriousness scores and the indexes of active features for each class.
+    """
     class_wise_data = {}
     model.eval()
     with torch.no_grad():
@@ -81,6 +93,13 @@ def get_correlated_features(model, dataloader, score_func="tanh-abs-log"):
 
 class ERMModel(nn.Module):
     def __init__(self, backbone, num_classes, pretrained):
+        """Initliaze an ERM model
+
+        Args:
+            backbone (str): specify the backbone of the model.
+            num_classes (int): number of classes.
+            pretrained (bool): whether to load the pretrained weights.
+        """
         super(ERMModel, self).__init__()
         if backbone == "resnet50":
             if pretrained:
@@ -102,6 +121,15 @@ class ERMModel(nn.Module):
         self.fc = nn.Linear(d, num_classes)
 
     def forward(self, x, get_fea=False):
+        """Calculate the logits (and embeddings of x if get_fea=True) of the model
+
+        Args:
+            x (torch.tensor): a batch of image tensors.
+            get_fea (bool, optional): choose whether to also return feature embeddings. Defaults to False.
+
+        Returns:
+            [torch.tensor, Optional[torch.tensor]]: prediction logits and embeddings of x if get_fea=True.
+        """
         fea = self.backbone(x)
         logits = self.fc(fea)
         if get_fea:
@@ -113,6 +141,14 @@ class ERMModel(nn.Module):
 
 class REPModel(nn.Module):
     def __init__(self, backbone, n_classes, pretrained):
+        """Initialize a prediction model that uses a centroid classifier for predictions.
+        This model is designed specifically for meta0-learning.
+
+        Args:
+            backbone (str): backbone of the model.
+            n_classes (int): number of classes.
+            pretrained (bool): choose whether to load the pretrained weights.
+        """
         super(REPModel, self).__init__()
         if backbone == "resnet50":
             if pretrained:
@@ -134,6 +170,13 @@ class REPModel(nn.Module):
         # self.init(idx_dataloader, False)
 
     def init(self, idx_dataloader, use_all=True):
+        """Initialize the centroids of the classifier using the dataloader.
+        A centroid of a class is the average feature embedding of all the samples in that class.
+
+        Args:
+            idx_dataloader (torch.utils.data.DataLoader): a dataloader that also provides the indexes of the images.
+            use_all (bool, optional): Choose whether to use all the samples in the dataset. If False, directly use idx_dataloader which can be created with a subset of the original dataset. Defaults to True.
+        """
         self.centroids = torch.zeros(self.n_classes, self.fea_dim)
         self.counts = {c:0 for c in range(self.n_classes)}
         if use_all:
@@ -152,6 +195,15 @@ class REPModel(nn.Module):
         self.centroids = self.centroids.cuda()
 
     def forward(self, x, get_fea=False):
+        """Predict the logits of x using the centroid classifier.
+
+        Args:
+            x (torch.tensor): a batch of image tensors.
+            get_fea (bool, optional): choose whether to return the image embeddings. Defaults to False.
+
+        Returns:
+            [torch.tensor, Optional[torch.tensor]]: prediction logits and embeddings of x if get_fea=True.
+        """
         fea = self.backbone(x) # B, D
         logits = torch.matmul(F.normalize(fea, dim=-1), F.normalize(self.centroids, dim=-1).T)
         if get_fea:

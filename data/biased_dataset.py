@@ -15,17 +15,38 @@ from tqdm import tqdm
 
 class IdxDataset(Dataset):
     def __init__(self, dataset):
+        """Initialize an indexed dataset
+
+        Args:
+            dataset (torch.utils.data.Dataset): a dataset
+        """
         self.dataset = dataset
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, idx):
+        """Return the data at the given index in the dataset along with the index
+
+        Args:
+            idx (int): index of the data
+
+        Returns:
+            tuple[int, Any]: the index and the data
+        """
         return (idx, *self.dataset[idx])
 
 
 class BiasedDataset(Dataset):
     def __init__(self, basedir, split="train", transform=None, concept_embed=None):
+        """Initialize a biased dataset (for Waterbirds and CelebA)
+
+        Args:
+            basedir (_type_): _description_
+            split (str, optional): specify the split. Defaults to "train".
+            transform (torchvision.transforms.Compose, optional): data transformations. Defaults to None.
+            concept_embed (str, optional): path to the concept embeddings. Defaults to None.
+        """
         try:
             split_i = ["train", "val", "test"].index(split)
         except ValueError:
@@ -74,10 +95,6 @@ class BiasedDataset(Dataset):
             with open(concept_embed, "rb") as f:
                 self.embeddings = pickle.load(f)
             self.embeddings = self.embeddings[split_info == split_i]
-            # if split == "val":
-            #     self.concepts = self.sel_concepts()
-            # else:
-            #     self.concepts = None
         else:
             self.embeddings = None
 
@@ -85,11 +102,26 @@ class BiasedDataset(Dataset):
         return len(self.filename_array)
 
     def get_group(self, idx):
+        """Get the pseudo-group of the given index
+
+        Args:
+            idx (int): index of the data
+        Returns:
+            int: the pseudo-group of the data at the given index.
+        """
         y = self.y_array[idx]
         g = (self.embeddings[idx] == 1) * self.n_classes + y
         return g
 
     def __getitem__(self, idx):
+        """Return the data at the given index in the dataset
+
+        Args:
+            idx (int): index of the data.
+
+        Returns:
+            tuple[torch.tensor if self.transform is given else PIL.Image.Image, int, int, int, int]: the image, the label, the group, the place, and the pseudo-group.
+        """
         y = self.y_array[idx]
         g = self.group_array[idx]
         p = self.confounder_array[idx]
@@ -106,7 +138,17 @@ class BiasedDataset(Dataset):
             return img, y, g, p, self.get_group(idx)
 
 
-def get_transform_cub(target_resolution, train, augment_data):
+def get_transform_biased(target_resolution, train, augment_data):
+    """Get the data transformation for the Waterbirds/CelebA dataset
+
+    Args:
+        target_resolution (list[int, int]): the target resolution of the image.
+        train (bool): whether the data is for training.
+        augment_data (bool): whether to augment the data.
+
+    Returns:
+        torchvision.transforms.Compose: the data transformation.
+    """
     scale = 256.0 / 224.0
 
     if (not train) or (not augment_data):
@@ -141,67 +183,3 @@ def get_transform_cub(target_resolution, train, augment_data):
             ]
         )
     return transform
-
-
-def get_loader(
-    data, train, reweight_groups, reweight_classes, reweight_places, **kwargs
-):
-    if not train:  # Validation or testing
-        assert reweight_groups is None
-        assert reweight_classes is None
-        assert reweight_places is None
-        shuffle = False
-        sampler = None
-    elif not (
-        reweight_groups or reweight_classes or reweight_places
-    ):  # Training but not reweighting
-        shuffle = True
-        sampler = None
-    elif reweight_groups:
-        # Training and reweighting groups
-        # reweighting changes the loss function from the normal ERM (average loss over each training example)
-        # to a reweighted ERM (weighted average where each (y,c) group has equal weight)
-        group_weights = len(data) / data.group_counts
-        weights = group_weights[data.group_array]
-
-        # Replacement needs to be set to True, otherwise we'll run out of minority samples
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
-    elif reweight_classes:  # Training and reweighting classes
-        class_weights = len(data) / data.y_counts
-        weights = class_weights[data.y_array]
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
-    else:  # Training and reweighting places
-        place_weights = len(data) / data.p_counts
-        weights = place_weights[data.p_array]
-        sampler = WeightedRandomSampler(weights, len(data), replacement=True)
-        shuffle = False
-
-    loader = DataLoader(data, shuffle=shuffle, sampler=sampler, **kwargs)
-    return loader
-
-
-def log_data(logger, train_data, test_data, val_data=None, get_yp_func=None):
-    logger.write(f"Training Data (total {len(train_data)})\n")
-    # group_id = y_id * n_places + place_id
-    # y_id = group_id // n_places
-    # place_id = group_id % n_places
-    for group_idx in range(train_data.n_groups):
-        y_idx, p_idx = get_yp_func(group_idx)
-        logger.write(
-            f"    Group {group_idx} (y={y_idx}, p={p_idx}): n = {train_data.group_counts[group_idx]:.0f}\n"
-        )
-    logger.write(f"Test Data (total {len(test_data)})\n")
-    for group_idx in range(test_data.n_groups):
-        y_idx, p_idx = get_yp_func(group_idx)
-        logger.write(
-            f"    Group {group_idx} (y={y_idx}, p={p_idx}): n = {test_data.group_counts[group_idx]:.0f}\n"
-        )
-    if val_data is not None:
-        logger.write(f"Validation Data (total {len(val_data)})\n")
-        for group_idx in range(val_data.n_groups):
-            y_idx, p_idx = get_yp_func(group_idx)
-            logger.write(
-                f"    Group {group_idx} (y={y_idx}, p={p_idx}): n = {val_data.group_counts[group_idx]:.0f}\n"
-            )

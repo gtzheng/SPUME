@@ -22,6 +22,13 @@ from timm.scheduler import create_scheduler
 
 class ERMCosineModel(nn.Module):
     def __init__(self, backbone, num_classes, pretrained=True):
+        """Initialize a prediction model that uses the cosine distance for predictions.
+
+        Args:
+            backbone (str): backbone of the model.
+            num_classes (int): number of classes.
+            pretrained (bool, optional): choose whether to load the pretrained weights. Defaults to True.
+        """
         super(ERMCosineModel, self).__init__()
         if backbone == "resnet50":
             if pretrained:
@@ -43,12 +50,30 @@ class ERMCosineModel(nn.Module):
         self.weights = nn.Parameter(torch.normal(0,0.1,size=(num_classes, d)))
 
     def forward(self, x):
+        """Return the logits of the model.
+
+        Args:
+            x (torch.tensor): a batch of image tensors.
+
+        Returns:
+            torch.tensor: prediction logits.
+        """
         fea = self.backbone(x)
         logits = torch.matmul(F.normalize(fea, dim=-1), F.normalize(self.weights,dim=-1).T)
         return logits
 
 
 def prepare_model(dataset, backbone, pretrained=True):
+    """Initialize a prediction model that uses the cosine distance for predictions.
+
+    Args:
+        dataset (str): dataset name. Use this to determine the number of classes.
+        backbone (str): backbone of the model.
+        pretrained (bool, optional): choose whether to load the pretrained weights. Defaults to True.
+
+    Returns:
+        torch.nn.Module: the model.
+    """
     if pretrained:
         print("Use ImageNet pretrained model")
     else:
@@ -66,6 +91,11 @@ def prepare_model(dataset, backbone, pretrained=True):
 
 
 def pretrain(args):
+    """Pretrain a model.
+
+    Args:
+        args (argparse.Namespace): arguments.
+    """
     gpu = ",".join([str(i) for i in get_free_gpu()[0:1]])
     set_gpu(gpu)
     now = datetime.now()

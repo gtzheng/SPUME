@@ -13,6 +13,9 @@ from img_captioning import VITGPT2_CAPTIONING, BLIP_CAPTIONING
 import argparse
       
 def to_singular(nlp, text):
+    """
+    Convert a plural noun to singular form
+    """
     doc = nlp(text)
     if len(doc) == 1:
         return doc[0].lemma_
@@ -21,6 +24,9 @@ def to_singular(nlp, text):
 
 
 def get_adj_pairs(doc):
+    """
+    Extract adjectives from a noun chunk
+    """
     adj_set = set()
     for chunk in doc.noun_chunks:
         adj = []
@@ -37,6 +43,9 @@ def get_adj_pairs(doc):
 
 
 def get_nouns(nlp, doc):
+    """
+    Extract nouns from a list of tokens
+    """
     nouns = []
     noun_set = set()
     for tok in doc:
@@ -57,6 +66,9 @@ def get_nouns(nlp, doc):
 
 
 def extract_concepts(nlp, texts):
+    """
+    Extract concepts (nouns and adjectives) from a list of texts
+    """
     docs = nlp.pipe(texts)
     concepts = []
     for doc in docs:
@@ -70,6 +82,9 @@ def extract_concepts(nlp, texts):
 
 
 def get_concept_embeddings(path, threshold=10):
+    """
+    Generate embeddings from the extracted concepts stored in a file specified by path
+    """
     caption_model = path.split("/")[-1].split('_')[0]
     count = 0
     with open(path, "rb") as f:
@@ -107,6 +122,9 @@ def get_concept_embeddings(path, threshold=10):
  
              
 def get_concepts(caption_path, splits=0, split_idx=0):
+    """
+    Extract concepts from captions stored in a file specified by caption_path
+    """
     save_path = "/".join(caption_path.split("/")[0:-1])
     caption_model = caption_path.split("/")[-1].split('_')[0]
     save_path = os.path.join(save_path, f"{caption_model}_extracted_concepts_{split_idx}_{splits}.pickle")
@@ -148,6 +166,9 @@ def get_concepts(caption_path, splits=0, split_idx=0):
     return save_path
 
 def get_data_folder(dataset):
+    """
+    Get the image folder and metadata file path for a dataset
+    """
     if dataset == "waterbirds":
         csv_path = "/path/data/waterbird_complete95_forest2water2/metadata.csv"
         img_path = "/path/data/waterbird_complete95_forest2water2"
@@ -161,6 +182,7 @@ def get_data_folder(dataset):
         csv_path = "/path/data/imagenet/metadata.csv"
         img_path = "/path/data/imagenet/"
     return img_path, csv_path
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", type=str, default="waterbirds", help="name of a dataset")

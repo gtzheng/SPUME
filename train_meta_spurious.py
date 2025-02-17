@@ -13,7 +13,7 @@ import os
 import glob
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
-from data.sampler import GroupTaskSampler, AttributesTaskSampler, RandomTaskSampler, AttributeClusterTaskSampler
+from data.sampler import GroupTaskSampler, AttributesTaskSampler, RandomTaskSampler
 import torch.nn.functional as F
 import pickle
 # import torch.multiprocessing as mp
@@ -35,10 +35,22 @@ def meta_train(
     test_loader,
     args
 ):
+    """Train the model using the meta-learning strategy
+
+    Args:
+        model (torch.nn.Module): a prediction model.
+        train_loader (torch.utils.data.DataLoader): a train dataloader.
+        idx_train_loader (torch.utils.data.DataLoader): a train dataloader that also returns the indexes of the data.
+        val_loader (torch.utils.data.DataLoader): a validation dataloader.
+        test_loader (torch.utils.data.DataLoader): a test dataloader.
+        args (argparse.Namespace): arguments.
+
+    Returns:
+        None
+    """
     timer = utils.Timer()
     logger = logging.getLogger("expr")
-    # with open(args.vocab_path, "rb") as f:
-    #     vocab = pickle.load(f)
+   
 
     criterion = torch.nn.CrossEntropyLoss()
     best_worst_acc = 0
@@ -49,6 +61,7 @@ def meta_train(
     optimizer = torch.optim.SGD(
         model.parameters(), lr=args.lr, momentum=0.9, weight_decay=1.e-4
     )
+    # set the learning rate scheduler
     if args.scheduler == "multistep":
         lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.milestones, gamma=args.gamma)
     elif args.scheduler == "cosine":
@@ -229,8 +242,6 @@ def meta_train(
             writer.add_scalar("Acc/TestWAcc", test_worst_acc, epoch)
             writer.add_scalar("Acc/TestUAcc", test_unbiased_acc, epoch)
             
-            # if get_best:
-            #     msg += "(best)"
         msg += f" ({utils.time_str(elapsed_time)}/{utils.time_str(avg_time_per_epoch*args.num_epochs)})"
         logger.debug(msg)
         writer.flush()

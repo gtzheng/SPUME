@@ -27,6 +27,12 @@ def collate_fn(data):
 
 class ImageData(Dataset):
     def __init__(self, img_folder, meta_data):
+        """Initialize the dataset
+
+        Args:
+            img_folder (str): folder containing images
+            meta_data (pd.DataFrame): metadata of the dataset
+        """
         self.meta_data = meta_data
         self.img_folder = img_folder
 
@@ -34,9 +40,15 @@ class ImageData(Dataset):
     def __len__(self):
         return len(self.meta_data)
     
-   
-
     def __getitem__(self, idx):
+        """Return an image, its label, and its name
+
+        Args:
+            idx (int): index of the image
+
+        Returns:
+            (PIL.Image.Image, int, str): an image, its label, and its name
+        """
      
         image_path = self.meta_data.iloc[idx]["img_filename"]
         temp = Image.open(os.path.join(self.img_folder,image_path))
@@ -50,6 +62,12 @@ class ImageData(Dataset):
 
 class VITGPT2_CAPTIONING:
     def __init__(self, max_length=16, num_beams=4):
+        """Initialize the ViT-GPT2 model for image captioning
+
+        Args:
+            max_length (int, optional): Maximum description length. Defaults to 16.
+            num_beams (int, optional): Number of beams used in beam search. Defaults to 4.
+        """
         self.model = VisionEncoderDecoderModel.from_pretrained(
             "nlpconnect/vit-gpt2-image-captioning"
         )
@@ -67,6 +85,15 @@ class VITGPT2_CAPTIONING:
 
 
     def predict_step(self, data, names):
+        """Generate image captions for a batch of images
+
+        Args:
+            data (list[PIL.Image.Image]): a list of Image objects
+            names (list[str]): a list of image names
+
+        Returns:
+            list[str]: a list of image captions in the format of "image_name,caption"
+        """
         with torch.no_grad():
             pixel_values = self.feature_extractor(images=data, return_tensors="pt").pixel_values
             pixel_values = pixel_values.cuda()
@@ -78,6 +105,19 @@ class VITGPT2_CAPTIONING:
         return msgs
 
     def get_img_captions(self, img_folder, csv_path, batch_size=256):
+        """Generate image captions for images specified in the csv file
+
+        Args:
+            img_folder (str): folder containing images
+            csv_path (str): metadata csv file
+            batch_size (int, optional): Batch size. Defaults to 256.
+
+        Raises:
+            ValueError: if the csv file does not exist
+
+        Returns:
+            str: path to the generated csv file containing image captions
+        """
         if not os.path.exists(csv_path):
             raise ValueError(f"{csv_path} does not exist")
         metadata_df = pd.read_csv(csv_path)
@@ -110,6 +150,12 @@ class VITGPT2_CAPTIONING:
 
 class BLIP_CAPTIONING:
     def __init__(self, max_length=16, num_beams=4):
+        """Initliaze the BLIP model for image captioning
+
+        Args:
+            max_length (int, optional): Maximum description length. Defaults to 16.
+            num_beams (int, optional): Number of beams used in beam search. Defaults to 4.
+        """
         self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
         self.model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-large").to("cuda")
     
@@ -122,7 +168,15 @@ class BLIP_CAPTIONING:
         self.gen_kwargs = {"max_length": max_length, "num_beams": num_beams}
 
     def predict_step(self, data, names):
-        
+        """Generate image captions for a batch of images
+
+        Args:
+            data (list[PIL.Image.Image]): a list of Image objects
+            names (list[str]): a list of image names
+
+        Returns:
+            list[str]: a list of image captions in the format of "image_name,caption"
+        """
         with torch.no_grad():
             text = "there"
             inputs = self.processor(data, [text]*len(data), return_tensors="pt").to("cuda")
@@ -135,6 +189,19 @@ class BLIP_CAPTIONING:
         return msgs
 
     def get_img_captions(self, img_folder, csv_path, batch_size=256):
+        """Generate image captions for images specified in the csv file
+
+        Args:
+            img_folder (str): folder containing images
+            csv_path (str): metadata csv file
+            batch_size (int, optional): Batch size. Defaults to 256.
+
+        Raises:
+            ValueError: if the csv file does not exist
+
+        Returns:
+            str: path to the generated csv file containing image captions
+        """
         if not os.path.exists(csv_path):
             raise ValueError(f"{csv_path} does not exist")
         

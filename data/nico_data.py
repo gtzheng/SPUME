@@ -31,6 +31,13 @@ TRAINING_DIST = {'dog': ['on_grass', 'in_water', 'in_cage', 'eating', 'on_beach'
 
 
 def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
+    """Prepare metadata for the NICO dataset.
+
+    Args:
+        NICO_DATA_FOLDER (str): path to the NICO dataset folder.
+        NICO_CXT_DIC_PATH (str): path to the context dictionary.
+        NICO_CLASS_DIC_PATH (str): path to the class dictionary.
+    """
     cxt_dic = json.load(open(NICO_CXT_DIC_PATH, 'r'))
     class_dic = json.load(open(NICO_CLASS_DIC_PATH, 'r'))
     cxt_index2name = {i: n for n, i in cxt_dic.items()}
@@ -79,6 +86,15 @@ def prepare_metadata(NICO_DATA_FOLDER, NICO_CXT_DIC_PATH, NICO_CLASS_DIC_PATH):
 
 
 def get_transform_nico(train, augment_data=True):
+    """Get the transformation for the NICO dataset.
+
+    Args:
+        train (bool): whether the data is for training.
+        augment_data (bool, optional): whether to augment the data. Defaults to True.
+
+    Returns:
+        torchvision.transforms.Compose: a composition of transformations.
+    """
     mean = [0.52418953, 0.5233741, 0.44896784]
     std = [0.21851876, 0.2175944, 0.22552039]
     if train and augment_data:
@@ -101,6 +117,16 @@ def get_transform_nico(train, augment_data=True):
 
 class NICO_dataset(Dataset):
     def __init__(self, basedir, split, balance_factor=1.0, transform=None, training_dist=None, concept_embed=None):
+        """Initialize the NICO dataset.
+
+        Args:
+            basedir (str): path to the dataset folder.
+            split (str): split of the dataset.
+            balance_factor (float, optional): not used. Defaults to 1.0.
+            transform (torchvision.transforms.Compose, optional): dataset transform. Defaults to None.
+            training_dist (dict[str,list[str]], optional): not used. Defaults to None.
+            concept_embed (str, optional): path to the concept embeddings. Defaults to None.
+        """
         super(NICO_dataset, self).__init__()
         assert split in ["train", "val", "test"], f"invalida split = {split}"
         self.basedir = basedir
@@ -161,6 +187,16 @@ class NICO_dataset(Dataset):
             self.embeddings = None
 
     def reformulate_data_dist(self, balance_factor, training_dist, seed=0):
+        """Reformulate the data distribution.
+
+        Args:
+            balance_factor (float): control the balance of the data across different contexts.
+            training_dist (dict[str, list[str]]): context distributions for each class.
+            seed (int, optional): random seed. Defaults to 0.
+
+        Returns:
+            np.array: selected sample indexes.
+        """
         sel_indexes = []
         np.random.seed(seed)
         for img_class in training_dist.keys():
@@ -193,11 +229,27 @@ class NICO_dataset(Dataset):
         return sel_indexes
 
     def get_group(self, idx):
+        """Get the pseudo-group of a sample.
+
+        Args:
+            idx (int): the sample index.
+
+        Returns:
+            int: the group of the sample.
+        """
         y = self.y_array[idx]
         g = (self.embeddings[idx] == 1) * self.n_classes + y
         return g
 
     def __getitem__(self, idx):
+        """Get the sample at the given index.
+
+        Args:
+            idx (int): the sample index.
+
+        Returns:
+            tuple: a tuple of the image, label, group, context, and pseudo-group of the sample
+        """
         img_path = os.path.join(self.basedir, self.filename_array[idx])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

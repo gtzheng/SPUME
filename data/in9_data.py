@@ -141,6 +141,14 @@ def find_classes(dir):
 
 
 def prepare_imagenet9_metadata(base_dir):
+    """Prepare the metadata for the ImageNet-9 dataset.
+
+    Args:
+        base_dir (str): the directory containing the ImageNet-9 dataset.
+
+    Returns:
+        int: the number of images in the dataset.
+    """
     with open(os.path.join(base_dir, "metadata.csv"), "w") as f:
         f.write("img_id,img_filename,y,label_name,split\n")
         image_id = 0
@@ -159,6 +167,14 @@ def prepare_imagenet9_metadata(base_dir):
 
 
 def prepare_imageneta_metadata(data_root):
+    """Prepare the metadata for the ImageNet-A dataset.
+
+    Args:
+        data_root (str): the directory containing the ImageNet-A dataset.
+
+    Returns:
+        int: the number of images in the dataset.
+    """
     with open(os.path.join(data_root, "metadata.csv"), "w") as f:
         f.write("img_id,img_filename,y,label_name\n")
         image_id = 0
@@ -183,6 +199,15 @@ class ImageNet9(torch.utils.data.Dataset):
         concept_embed=None,
         cluster_file=None
     ):
+        """Initialize the ImageNet-9 dataset.
+
+        Args:
+            basedir (str): the directory containing the ImageNet-9 dataset.
+            split (str): the split of the dataset.
+            transform (torchvision.transforms.Compose, optional): the transformation to apply to the images. Defaults to None.
+            concept_embed (str, optional): the path to the concept embeddings. Defaults to None.
+            cluster_file (str, optional): the path to the cluster file. Defaults to None.
+        """
         metadata_df = pd.read_csv(os.path.join(basedir, "metadata.csv"))
         split_info = metadata_df["split"].values
         split_info = split_info[split_info != 2]
@@ -225,11 +250,27 @@ class ImageNet9(torch.utils.data.Dataset):
             self.embeddings = None
 
     def get_group(self, idx):
+        """Get the pseudo group of an image.
+
+        Args:
+            idx (int): the index of the image.
+
+        Returns:
+            int: the pseudo group of the image.
+        """
         y = self.y_array[idx]
         g = (self.embeddings[idx] == 1) * self.n_classes + y
         return g
 
     def __getitem__(self, index):
+        """Get the image, target, groups, target (place holder), and pseudo groups of an image.
+
+        Args:
+            index (int): the index of the image.
+
+        Returns:
+            tuple: a tuple containing the image, target, groups, target (place holder), and pseudo groups of the image.
+        """
         path, target = self.filename_array[index], self.y_array[index]
         img_path = os.path.join(self.basedir, path)
         with warnings.catch_warnings():
@@ -257,6 +298,12 @@ class ImageNetA(torch.utils.data.Dataset):
         basedir,
         transform=None,
     ):
+        """Initialize the ImageNet-A dataset.
+
+        Args:
+            basedir (str): the directory containing the ImageNet-A dataset.
+            transform (torchvision.transforms.Compose, optional): the transformation to apply to the images. Defaults to None.
+        """
         self.metadata_df = pd.read_csv(os.path.join(basedir, "metadata.csv"))
         print(len(self.metadata_df))
 
@@ -268,6 +315,14 @@ class ImageNetA(torch.utils.data.Dataset):
         self.transform = transform
 
     def __getitem__(self, index):
+        """Get the image, target, target (place holder), target (place holder), target (place holder).
+
+        Args:
+            index (int): the index of the image.
+
+        Returns:
+            tuple: a tuple containing the image, target, target (place holder), target (place holder), and target (place holder).
+        """
         path, target = self.filename_array[index], self.y_array[index]
         img_path = os.path.join(self.basedir, path)
         with warnings.catch_warnings():
@@ -284,6 +339,15 @@ class ImageNetA(torch.utils.data.Dataset):
 
 
 def get_imagenet_transform(train, augment_data=True):
+    """Get the transformation for the ImageNet dataset.
+
+    Args:
+        train (bool): whether the transformation is for training or testing.
+        augment_data (bool, optional): whether to augment the data. Defaults to True.
+
+    Returns:
+        torchvision.transforms.Compose: the transformation.
+    """
     if train and augment_data:
         transform = transforms.Compose(
             [
